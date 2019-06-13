@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="sl_error_retry" type="id"/>
+    <item name="sl_empty_content_retry" type="id"/>
+</resources>
