@@ -13,16 +13,16 @@ import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
-class FastJsonBundle private constructor(private val bundle: Bundle) {
+class JsonBundle private constructor(private val bundle: Bundle) {
 
     /** 将map中的所有数据均存放至容器中*/
-    fun put(map: Map<String, Any?>): FastJsonBundle {
+    fun put(map: Map<String, Any?>): JsonBundle {
         map.forEach { put(it.key, it.value) }
         return this
     }
 
     /** 直接一起存储不定数量的键值对数据到容器中*/
-    fun put(vararg items: Pair<String, Any?>): FastJsonBundle {
+    fun put(vararg items: Pair<String, Any?>): JsonBundle {
         items.forEach { put(it.first, it.second) }
         return this
     }
@@ -35,7 +35,7 @@ class FastJsonBundle private constructor(private val bundle: Bundle) {
      * 1. 当[value]的数据类型支持直接被bundle进行存储时，直接进行存储
      * 2. 当[value]的数据类型不支持被bundle进行存储是，则将先将value转换为json后再进行存储
      */
-    fun put(key: String, value: Any?): FastJsonBundle {
+    fun put(key: String, value: Any?): JsonBundle {
         if (TextUtils.isEmpty(key) || value == null) {
             return this
         }
@@ -180,8 +180,8 @@ class FastJsonBundle private constructor(private val bundle: Bundle) {
         private val injector = BundleInjector()
 
         @JvmStatic
-        fun create(source: Bundle? = null): FastJsonBundle {
-            return FastJsonBundle(source ?: Bundle())
+        fun create(source: Bundle? = null): JsonBundle {
+            return JsonBundle(source ?: Bundle())
         }
 
         @JvmStatic
@@ -246,11 +246,11 @@ private class BundleInjector {
     // 将bundle中的数据注入到entity的对应字段中去。
     fun toEntity(entity: Any, bundle: Bundle): Any {
         val map = parseFields(entity.javaClass)
-        val easyBundle = FastJsonBundle.create(bundle)
+        val jsonBundle = JsonBundle.create(bundle)
         for ((name, pair) in map) {
             try {
                 if (bundle.containsKey(name).not()) continue
-                val value = easyBundle.get(name, pair.first.type) ?: continue
+                val value = jsonBundle.get(name, pair.first.type) ?: continue
                 pair.first.set(entity, value)
             } catch (e: Exception) {
                 if (pair.second.throwable) {
@@ -265,11 +265,11 @@ private class BundleInjector {
     // 将entity中的指定数据注入到bundle中去
     fun toBundle(entity: Any, bundle: Bundle): Bundle {
         val map = parseFields(entity.javaClass)
-        val easyBundle = FastJsonBundle.create(bundle)
+        val jsonBundle = JsonBundle.create(bundle)
         for ((name, pair) in map) {
             try {
                 val value = pair.first.get(entity) ?: continue
-                easyBundle.put(name, value)
+                jsonBundle.put(name, value)
             } catch (e: Exception) {
                 if (pair.second.throwable) {
                     throw e
