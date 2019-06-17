@@ -7,22 +7,26 @@ import android.text.TextUtils
 import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
-import com.alibaba.fastjson.JSON
+import com.google.gson.Gson
 import java.io.Serializable
 import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
-class JsonBundle private constructor(private val bundle: Bundle) {
+/**
+ * 用于方便的进行Bundle数据存取。
+ * @author haoge on 2018/6/14
+ */
+class GsonBundle private constructor(val bundle: Bundle) {
 
     /** 将map中的所有数据均存放至容器中*/
-    fun put(map: Map<String, Any?>): JsonBundle {
+    fun put(map: Map<String, Any?>): GsonBundle {
         map.forEach { put(it.key, it.value) }
         return this
     }
 
     /** 直接一起存储不定数量的键值对数据到容器中*/
-    fun put(vararg items: Pair<String, Any?>): JsonBundle {
+    fun put(vararg items: Pair<String, Any?>): GsonBundle {
         items.forEach { put(it.first, it.second) }
         return this
     }
@@ -35,10 +39,11 @@ class JsonBundle private constructor(private val bundle: Bundle) {
      * 1. 当[value]的数据类型支持直接被bundle进行存储时，直接进行存储
      * 2. 当[value]的数据类型不支持被bundle进行存储是，则将先将value转换为json后再进行存储
      */
-    fun put(key: String, value: Any?): JsonBundle {
+    fun put(key: String, value: Any?): GsonBundle {
         if (TextUtils.isEmpty(key) || value == null) {
             return this
         }
+
         var store = true
         // 根据value的类型，选择合适的api进行存储
         @Suppress("UNCHECKED_CAST")
@@ -155,6 +160,7 @@ class JsonBundle private constructor(private val bundle: Bundle) {
     // 兼容java环境使用，对返回数据进行二次处理。避免对基本数据类型返回null导致crash
     private fun returnsValue(value: Any?, type: Class<*>): Any? {
         if (value != null) return value
+
         return when (type.canonicalName) {
             "byte" -> 0.toByte()
             "short" -> 0.toShort()
@@ -169,19 +175,19 @@ class JsonBundle private constructor(private val bundle: Bundle) {
     }
 
     private fun toJSON(value: Any): String {
-        return JSON.toJSONString(value)
+        return Gson().toJson(value)
     }
 
     private fun parseJSON(json: String, type: Type): Any {
-        return JSON.parseObject(json, type)
+        return Gson().fromJson(json, type)
     }
 
     companion object {
         private val injector = BundleInjector()
 
         @JvmStatic
-        fun create(source: Bundle? = null): JsonBundle {
-            return JsonBundle(source ?: Bundle())
+        fun create(source: Bundle? = null): GsonBundle {
+            return GsonBundle(source ?: Bundle())
         }
 
         @JvmStatic
@@ -217,26 +223,30 @@ private class BundleInjector {
         if (container.containsKey(clazz)) {
             return container.getValue(clazz)
         }
+
         // 将自身以及父类中配有BundleField注解的字段进行解析存储。
         var type = clazz
         val fields = HashMap<String, Pair<Field, BundleField>>()
         while (true) {
             val name = type.canonicalName
-            if (name != null) {
-                if (name.startsWith("android")
-                        || name.startsWith("java")
-                        || name.startsWith("javax")
-                        || name.startsWith("kotlin")) {
-                    break // 对系统类进行跳过
-                }
+            if (name.startsWith("android")
+                    || name.startsWith("java")
+                    || name.startsWith("javax")
+                    || name.startsWith("kotlin")) {
+                // 对系统类进行跳过
+                break
             }
+
             for (field in type.declaredFields) {
                 val bundleField = field.getAnnotation(BundleField::class.java) ?: continue
+
                 if (field.isAccessible.not()) {
                     field.isAccessible = true
                 }
+
                 fields[if (bundleField.value.isEmpty()) field.name else bundleField.value] = Pair(field, bundleField)
             }
+
             type = type.superclass
         }
         container[clazz] = fields
@@ -246,11 +256,13 @@ private class BundleInjector {
     // 将bundle中的数据注入到entity的对应字段中去。
     fun toEntity(entity: Any, bundle: Bundle): Any {
         val map = parseFields(entity.javaClass)
-        val jsonBundle = JsonBundle.create(bundle)
+        val easyBundle = GsonBundle.create(bundle)
         for ((name, pair) in map) {
             try {
                 if (bundle.containsKey(name).not()) continue
-                val value = jsonBundle.get(name, pair.first.type) ?: continue
+
+                val value = easyBundle.get(name, pair.first.type) ?: continue
+
                 pair.first.set(entity, value)
             } catch (e: Exception) {
                 if (pair.second.throwable) {
@@ -265,11 +277,11 @@ private class BundleInjector {
     // 将entity中的指定数据注入到bundle中去
     fun toBundle(entity: Any, bundle: Bundle): Bundle {
         val map = parseFields(entity.javaClass)
-        val jsonBundle = JsonBundle.create(bundle)
+        val easyBundle = GsonBundle.create(bundle)
         for ((name, pair) in map) {
             try {
                 val value = pair.first.get(entity) ?: continue
-                jsonBundle.put(name, value)
+                easyBundle.put(name, value)
             } catch (e: Exception) {
                 if (pair.second.throwable) {
                     throw e
