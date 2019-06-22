@@ -9,7 +9,6 @@ import android.util.SizeF
 import android.util.SparseArray
 import com.google.gson.Gson
 import java.io.Serializable
-import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
@@ -17,7 +16,7 @@ import java.lang.reflect.Type
  * 用于方便的进行Bundle数据存取。
  * @author haoge on 2018/6/14
  */
-class GsonBundle private constructor(val bundle: Bundle) {
+class GsonBundle private constructor(private val bundle: Bundle) {
 
     /** 将map中的所有数据均存放至容器中*/
     fun put(map: Map<String, Any?>): GsonBundle {
@@ -183,112 +182,11 @@ class GsonBundle private constructor(val bundle: Bundle) {
     }
 
     companion object {
-        private val injector = BundleInjector()
 
         @JvmStatic
         fun create(source: Bundle? = null): GsonBundle {
             return GsonBundle(source ?: Bundle())
         }
-
-        @JvmStatic
-        fun toEntity(entity: Any?, bundle: Bundle?): Any? {
-            if (entity == null || bundle == null) return entity
-            return injector.toEntity(entity, bundle)
-        }
-
-        @JvmStatic
-        fun toBundle(entity: Any?, bundle: Bundle?): Bundle? {
-            if (entity == null || bundle == null) return bundle
-            return injector.toBundle(entity, bundle)
-        }
-
-        private fun exist(name: String): Boolean = try {
-            Class.forName(name)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-}
-
-@Retention(AnnotationRetention.RUNTIME)
-@Target(AnnotationTarget.FIELD)
-annotation class BundleField(val value: String = "", val throwable: Boolean = false)
-
-private class BundleInjector {
-    // 缓存注解与字段的匹配信息。进行加速
-    private val container = mutableMapOf<Class<*>, Map<String, Pair<Field, BundleField>>>()
-
-    fun parseFields(clazz: Class<*>): Map<String, Pair<Field, BundleField>> {
-        if (container.containsKey(clazz)) {
-            return container.getValue(clazz)
-        }
-
-        // 将自身以及父类中配有BundleField注解的字段进行解析存储。
-        var type = clazz
-        val fields = HashMap<String, Pair<Field, BundleField>>()
-        while (true) {
-            val name = type.canonicalName
-            if (name.startsWith("android")
-                    || name.startsWith("java")
-                    || name.startsWith("javax")
-                    || name.startsWith("kotlin")) {
-                // 对系统类进行跳过
-                break
-            }
-
-            for (field in type.declaredFields) {
-                val bundleField = field.getAnnotation(BundleField::class.java) ?: continue
-
-                if (field.isAccessible.not()) {
-                    field.isAccessible = true
-                }
-
-                fields[if (bundleField.value.isEmpty()) field.name else bundleField.value] = Pair(field, bundleField)
-            }
-
-            type = type.superclass
-        }
-        container[clazz] = fields
-        return fields
-    }
-
-    // 将bundle中的数据注入到entity的对应字段中去。
-    fun toEntity(entity: Any, bundle: Bundle): Any {
-        val map = parseFields(entity.javaClass)
-        val easyBundle = GsonBundle.create(bundle)
-        for ((name, pair) in map) {
-            try {
-                if (bundle.containsKey(name).not()) continue
-
-                val value = easyBundle.get(name, pair.first.type) ?: continue
-
-                pair.first.set(entity, value)
-            } catch (e: Exception) {
-                if (pair.second.throwable) {
-                    throw e
-                }
-                e.printStackTrace()
-            }
-        }
-        return entity
-    }
-
-    // 将entity中的指定数据注入到bundle中去
-    fun toBundle(entity: Any, bundle: Bundle): Bundle {
-        val map = parseFields(entity.javaClass)
-        val easyBundle = GsonBundle.create(bundle)
-        for ((name, pair) in map) {
-            try {
-                val value = pair.first.get(entity) ?: continue
-                easyBundle.put(name, value)
-            } catch (e: Exception) {
-                if (pair.second.throwable) {
-                    throw e
-                }
-            }
-        }
-        return bundle
     }
 }
 
