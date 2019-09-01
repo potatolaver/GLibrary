@@ -19,3 +19,18 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-obfuscationdictionary dic.txt
+-classobfuscationdictionary dic.txt
+-packageobfuscationdictionary dic.txt
+
+-keep class androidx.** {*;}
+-keep class android.** {*;}
+-keep class okhttp3.** {*;}
+-keep class okio.** {*;}
+-keep class com.google.** {*;}
+-keep class org.apaches.** {*;}
+-keep class dalvik.** {*;}
+-keep class kotlin.** {*;}
+-keep class kotlinx.** {*;}
+-keep class qmuiteam.** {*;}

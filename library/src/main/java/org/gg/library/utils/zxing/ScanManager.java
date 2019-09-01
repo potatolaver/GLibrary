@@ -10,6 +10,7 @@ import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageAnalysisConfig;
 import androidx.camera.core.Preview;
 import androidx.camera.core.PreviewConfig;
+import androidx.lifecycle.LifecycleOwner;
 
 public class ScanManager {
 
@@ -33,7 +34,7 @@ public class ScanManager {
     }
 
     public ScanManager bindToLifecycle(AppCompatActivity activity) {
-        CameraX.bindToLifecycle(activity, mPreview, mAnalysis);
+        CameraX.bindToLifecycle((LifecycleOwner) activity, mPreview, mAnalysis);
         return this;
     }
 

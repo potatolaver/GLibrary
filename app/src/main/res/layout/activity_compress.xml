@@ -5,24 +5,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/camera"
-        android:layout_width="wrap_content"
+    <ImageView
+        android:id="@+id/imageview"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="拍照"
-        app:layout_constraintBottom_toTopOf="@id/album"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
-    <Button
-        android:id="@+id/album"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="相册"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/camera"/>
+    <com.qmuiteam.qmui.widget.QMUIProgressBar
+        android:id="@+id/progressbar"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        app:layout_constraintCircle="@id/imageview"
+        app:qmui_background_color="#88eeeeee"
+        app:qmui_max_value="100"
+        app:qmui_progress_color="#8cd3ec"
+        app:qmui_stroke_width="25dp"
+        app:qmui_type="type_circle"
+        app:qmui_value="0"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
