@@ -40,14 +40,14 @@ allprojects {
     }
 }
 
-subprojects {
-    configurations.all {
-        resolutionStrategy {
-            force "androidx.core:core:1.0.2"
-            force 'androidx.recyclerview:recyclerview:1.0.0'
-        }
-    }
-}
+//subprojects {
+//    configurations.all {
+//        resolutionStrategy {
+//            force "androidx.core:core:1.0.2"
+//            force 'androidx.recyclerview:recyclerview:1.0.0'
+//        }
+//    }
+//}
 
 task clean(type: Delete) {
     delete rootProject.buildDir
