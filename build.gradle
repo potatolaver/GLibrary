@@ -11,8 +11,8 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50"
+        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10"
 
 //        classpath "com.didiglobal.booster:booster-gradle-plugin:0.21.3"
 //        classpath "com.didiglobal.booster:booster-task-all:0.21.3"
